@@ -68,7 +68,7 @@ void LegController<T>::edampCommand(RobotType robot, T gain) {
         commands[leg].kdCartesian(axis, axis) = gain;
       }
     }
-  } else {  // mini-cheetah
+  } else {  // mini-cheetah, stoch and other robots
     for (int leg = 0; leg < 4; leg++) {
       for (int axis = 0; axis < 3; axis++) {
         commands[leg].kdJoint(axis, axis) = gain;

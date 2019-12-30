@@ -2,6 +2,7 @@
 #include <ControlParameters/ControlParameterInterface.h>
 #include <Dynamics/Cheetah3.h>
 #include <Dynamics/MiniCheetah.h>
+#include <Dynamics/Stoch.h>
 #include <unistd.h>
 #include "ControlParameters/SimulatorParameters.h"
 

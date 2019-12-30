@@ -12,6 +12,7 @@
 #include "Controllers/OrientationEstimator.h"
 #include "Dynamics/Cheetah3.h"
 #include "Dynamics/MiniCheetah.h"
+#include "Dynamics/Stoch.h"
 #include "Utilities/Utilities_print.h"
 #include "ParamHandler.hpp"
 #include "Utilities/Timer.h"

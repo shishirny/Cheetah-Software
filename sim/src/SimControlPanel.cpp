@@ -79,7 +79,7 @@ SimControlPanel::SimControlPanel(QWidget* parent)
       _pointsLCM(getLcmUrl(255)),
       _indexmapLCM(getLcmUrl(255)),
       _ctrlVisionLCM(getLcmUrl(255)),
-      _miniCheetahDebugLCM(getLcmUrl(255))
+      _CheetahDebugLCM(getLcmUrl(255))
 {
 
   ui->setupUi(this); // QT setup
@@ -132,10 +132,10 @@ SimControlPanel::SimControlPanel(QWidget* parent)
   _ctrlVisionLCMThread = std::thread(&SimControlPanel::ctrlVisionLCMThread, this);
 
   // subscribe mc debug
-  _miniCheetahDebugLCM.subscribe("leg_control_data", &SimControlPanel::handleSpiDebug, this);
-  _miniCheetahDebugLCMThread = std::thread([&](){
+  _CheetahDebugLCM.subscribe("leg_control_data", &SimControlPanel::handleSpiDebug, this);
+  _CheetahDebugLCMThread = std::thread([&](){
    for(;;)
-     _miniCheetahDebugLCM.handle();
+     _CheetahDebugLCM.handle();
   });
 
 }
@@ -265,7 +265,8 @@ void SimControlPanel::handleSpiDebug(const lcm::ReceiveBuffer *rbuf, const std::
       }
     }
 
-    _miniCheetahDebugLCM.publish("spi_debug_cmd", &lcm_cmd);
+    _CheetahDebugLCM.publish("spi_debug_cmd", &lcm_cmd);
+
   }
 
 }
@@ -350,7 +351,9 @@ void SimControlPanel::on_startButton_clicked() {
     robotType = RobotType::CHEETAH_3;
   } else if (ui->miniCheetahButton->isChecked()) {
     robotType = RobotType::MINI_CHEETAH;
-  } else {
+  } else if (ui->stochButton->isChecked()) {
+      robotType = RobotType::STOCH;
+  }  else {
     createErrorMessage("Error: you must select a robot");
     return;
   }

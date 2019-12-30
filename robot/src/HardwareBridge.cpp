@@ -228,6 +228,11 @@ MiniCheetahHardwareBridge::MiniCheetahHardwareBridge(RobotController* robot_ctrl
   _load_parameters_from_file = load_parameters_from_file;
 }
 
+StochHardwareBridge::StochHardwareBridge(RobotController* robot_ctrl, bool load_parameters_from_file)
+    : HardwareBridge(robot_ctrl), _spiLcm(getLcmUrl(255)), _microstrainLcm(getLcmUrl(255)) {
+  _load_parameters_from_file = load_parameters_from_file;
+}
+
 /*!
  * Main method for Mini Cheetah hardware
  */
@@ -341,6 +346,7 @@ void MiniCheetahHardwareBridge::run() {
   }
 }
 
+
 /*!
  * Receive RC with SBUS
  */
@@ -370,7 +376,29 @@ void MiniCheetahHardwareBridge::runMicrostrain() {
 
 }
 
+void StochHardwareBridge::runMicrostrain() {
+  while(true) {
+    _microstrainImu.run();
+
+#ifdef USE_MICROSTRAIN
+    _vectorNavData.accelerometer = _microstrainImu.acc;
+    _vectorNavData.quat[0] = _microstrainImu.quat[1];
+    _vectorNavData.quat[1] = _microstrainImu.quat[2];
+    _vectorNavData.quat[2] = _microstrainImu.quat[3];
+    _vectorNavData.quat[3] = _microstrainImu.quat[0];
+    _vectorNavData.gyro = _microstrainImu.gyro;
+#endif
+  }
+
+
+}
+
 void MiniCheetahHardwareBridge::logMicrostrain() {
+  _microstrainImu.updateLCM(&_microstrainData);
+  _microstrainLcm.publish("microstrain", &_microstrainData);
+}
+
+void StochHardwareBridge::logMicrostrain() {
   _microstrainImu.updateLCM(&_microstrainData);
   _microstrainLcm.publish("microstrain", &_microstrainData);
 }
@@ -382,6 +410,20 @@ void MiniCheetahHardwareBridge::initHardware() {
   _vectorNavData.quat << 1, 0, 0, 0;
 #ifndef USE_MICROSTRAIN
   printf("[MiniCheetahHardware] Init vectornav\n");
+  if (!init_vectornav(&_vectorNavData)) {
+    printf("Vectornav failed to initialize\n");
+    //initError("failed to initialize vectornav!\n", false);
+  }
+#endif
+
+  init_spi();
+  _microstrainInit = _microstrainImu.tryInit(0, 921600);
+}
+
+void StochHardwareBridge::initHardware() {
+  _vectorNavData.quat << 1, 0, 0, 0;
+#ifndef USE_MICROSTRAIN
+  printf("[StochHardware] Init vectornav\n");
   if (!init_vectornav(&_vectorNavData)) {
     printf("Vectornav failed to initialize\n");
     //initError("failed to initialize vectornav!\n", false);
@@ -410,6 +452,21 @@ void Cheetah3HardwareBridge::initHardware() {
  * Run Mini Cheetah SPI
  */
 void MiniCheetahHardwareBridge::runSpi() {
+  spi_command_t* cmd = get_spi_command();
+  spi_data_t* data = get_spi_data();
+
+  memcpy(cmd, &_spiCommand, sizeof(spi_command_t));
+  spi_driver_run();
+  memcpy(&_spiData, data, sizeof(spi_data_t));
+
+  _spiLcm.publish("spi_data", data);
+  _spiLcm.publish("spi_command", cmd);
+}
+
+/*!
+ * Run Stoch SPI
+ */
+void StochHardwareBridge::runSpi() {
   spi_command_t* cmd = get_spi_command();
   spi_data_t* data = get_spi_data();
 
@@ -585,6 +642,119 @@ void Cheetah3HardwareBridge::run() {
   for (;;) {
     usleep(100000);
     taskManager.printStatus();
+    // printf("joy %f\n", _robotRunner->driverCommand->leftStickAnalog[0]);
+  }
+}
+
+
+/*!
+ * Main method for Stoch hardware
+ */
+void StochHardwareBridge::run() {
+  initCommon();
+  initHardware();
+
+  if(_load_parameters_from_file) {
+    printf("[Hardware Bridge] Loading parameters from file...\n");
+
+    try {
+      _robotParams.initializeFromYamlFile(THIS_COM "config/stoch-defaults.yaml");
+    } catch(std::exception& e) {
+      printf("Failed to initialize robot parameters from yaml file: %s\n", e.what());
+      exit(1);
+    }
+
+    if(!_robotParams.isFullyInitialized()) {
+      printf("Failed to initialize all robot parameters\n");
+      exit(1);
+    }
+
+    printf("Loaded robot parameters\n");
+
+    if(_userControlParameters) {
+      try {
+        _userControlParameters->initializeFromYamlFile(THIS_COM "config/mc-mit-ctrl-user-parameters.yaml");
+      } catch(std::exception& e) {
+        printf("Failed to initialize user parameters from yaml file: %s\n", e.what());
+        exit(1);
+      }
+
+      if(!_userControlParameters->isFullyInitialized()) {
+        printf("Failed to initialize all user parameters\n");
+        exit(1);
+      }
+
+      printf("Loaded user parameters\n");
+    } else {
+      printf("Did not load user parameters because there aren't any\n");
+    }
+  } else {
+    printf("[Hardware Bridge] Loading parameters over LCM...\n");
+    while (!_robotParams.isFullyInitialized()) {
+      printf("[Hardware Bridge] Waiting for robot parameters...\n");
+      usleep(1000000);
+    }
+
+    if(_userControlParameters) {
+      while (!_userControlParameters->isFullyInitialized()) {
+        printf("[Hardware Bridge] Waiting for user parameters...\n");
+        usleep(1000000);
+      }
+    }
+  }
+
+
+  printf("[Hardware Bridge] Got all parameters, starting up!\n");
+
+  _robotRunner =
+      new RobotRunner(_controller, &taskManager, _robotParams.controller_dt, "robot-control");
+
+  _robotRunner->driverCommand = &_gamepadCommand;
+  _robotRunner->spiData = &_spiData;
+  _robotRunner->spiCommand = &_spiCommand;
+  _robotRunner->robotType = RobotType::STOCH;
+  _robotRunner->vectorNavData = &_vectorNavData;
+  _robotRunner->controlParameters = &_robotParams;
+  _robotRunner->visualizationData = &_visualizationData;
+  _robotRunner->cheetahMainVisualization = &_mainCheetahVisualization;
+
+  _firstRun = false;
+
+  // init control thread
+
+  statusTask.start();
+
+  // spi Task start
+  PeriodicMemberFunction<StochHardwareBridge> spiTask(
+      &taskManager, .002, "spi", &StochHardwareBridge::runSpi, this);
+  spiTask.start();
+
+  // microstrain
+  if(_microstrainInit)
+    _microstrainThread = std::thread(&StochHardwareBridge::runMicrostrain, this);
+
+  // robot controller start
+  _robotRunner->start();
+
+  // visualization start
+  PeriodicMemberFunction<StochHardwareBridge> visualizationLCMTask(
+      &taskManager, .0167, "lcm-vis",
+      &MiniCheetahHardwareBridge::publishVisualizationLCM, this);
+  visualizationLCMTask.start();
+
+  // rc controller
+  _port = init_sbus(false);  // Not Simulation
+  PeriodicMemberFunction<HardwareBridge> sbusTask(
+      &taskManager, .005, "rc_controller", &HardwareBridge::run_sbus, this);
+  sbusTask.start();
+
+  // temporary hack: microstrain logger
+  PeriodicMemberFunction<StochHardwareBridge> microstrainLogger(
+      &taskManager, .001, "microstrain-logger", &StochHardwareBridge::logMicrostrain, this);
+  microstrainLogger.start();
+
+  for (;;) {
+    usleep(1000000);
     // printf("joy %f\n", _robotRunner->driverCommand->leftStickAnalog[0]);
   }
 }
