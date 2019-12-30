@@ -56,7 +56,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(robot)
 add_subdirectory(third-party)
-add_subdirectory(qtgamepad)
 add_subdirectory(common)
 
 if(NO_SIM)
