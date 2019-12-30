@@ -158,13 +158,13 @@ public slots:
   lcm::LCM _pointsLCM;
   lcm::LCM _indexmapLCM;
   lcm::LCM _ctrlVisionLCM;
-  lcm::LCM _miniCheetahDebugLCM;
+  lcm::LCM _CheetahDebugLCM;
 
   std::thread _pointsLCMThread;
   std::thread _heightmapLCMThread;
   std::thread _indexmapLCMThread;
   std::thread _ctrlVisionLCMThread;
-  std::thread _miniCheetahDebugLCMThread;
+  std::thread _CheetahDebugLCMThread;
 
   MiniCheetahDebug _mcDebugWindow;
 

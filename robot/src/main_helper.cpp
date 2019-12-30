@@ -41,6 +41,8 @@ int main_helper(int argc, char** argv, RobotController* ctrl) {
     gMasterConfig._robot = RobotType::CHEETAH_3;
   } else if (argv[1][0] == 'm') {
     gMasterConfig._robot = RobotType::MINI_CHEETAH;
+  } else if (argv[1][0] == 's') {
+      gMasterConfig._robot = RobotType::STOCH;
   } else {
     printUsage();
     return EXIT_FAILURE;
@@ -65,8 +67,9 @@ int main_helper(int argc, char** argv, RobotController* ctrl) {
 
   printf("[Quadruped] Cheetah Software\n");
   printf("        Quadruped:  %s\n",
-         gMasterConfig._robot == RobotType::MINI_CHEETAH ? "Mini Cheetah"
-                                                         : "Cheetah 3");
+         gMasterConfig._robot == RobotType::STOCH ? "Stoch" :
+                                                    gMasterConfig._robot == RobotType::MINI_CHEETAH ? "Mini Cheetah":
+                                                                                                       "Cheetah 3");
   printf("        Driver: %s\n", gMasterConfig.simulated
                                      ? "Development Simulation Driver"
                                      : "Quadruped Driver");
@@ -77,7 +80,7 @@ int main_helper(int argc, char** argv, RobotController* ctrl) {
       printUsage();
       return EXIT_FAILURE;
     }
-    if (gMasterConfig._robot == RobotType::MINI_CHEETAH) {
+    if (gMasterConfig._robot == RobotType::MINI_CHEETAH || gMasterConfig._robot == RobotType::STOCH) {
       SimulationBridge simulationBridge(gMasterConfig._robot, ctrl);
       simulationBridge.run();
       printf("[Quadruped] SimDriver run() has finished!\n");
@@ -90,7 +93,7 @@ int main_helper(int argc, char** argv, RobotController* ctrl) {
     }
   } else {
 #ifdef linux
-    if (gMasterConfig._robot == RobotType::MINI_CHEETAH) {
+    if (gMasterConfig._robot == RobotType::MINI_CHEETAH || gMasterConfig._robot == RobotType::STOCH) {
       MiniCheetahHardwareBridge hw(ctrl, gMasterConfig.load_from_file);
       hw.run();
       printf("[Quadruped] SimDriver run() has finished!\n");
