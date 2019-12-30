@@ -1,4 +1,4 @@
-/*! @file MiniCheetah.h
+/*! @file Stoch.h
  *  @brief Utility function to build a Mini Cheetah Quadruped object
  *
  * This file is based on MiniCheetahFullRotorModel_mex.m and builds a model

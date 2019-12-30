@@ -14,7 +14,7 @@
 #include "SimUtilities/SimulatorMessage.h"
 #include "Types.h"
 #include "Utilities/PeriodicTask.h"
-#include "Utilities/SharedMemory.h"
+//#include "Utilities/SharedMemory.h"
 
 class SimulationBridge {
  public:

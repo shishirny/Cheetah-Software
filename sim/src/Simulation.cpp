@@ -56,11 +56,20 @@ Simulation::Simulation(RobotType robot, Graphics3D* window,
     Vec4<float> truthColor, seColor;
     truthColor << 0.2, 0.4, 0.2, 0.6;
     seColor << .75,.75,.75, 1.0;
-    _simRobotID = _robot == RobotType::MINI_CHEETAH ? window->setupMiniCheetah(truthColor, true, true)
-                                                    : window->setupCheetah3(truthColor, true, true);
-    _controllerRobotID = _robot == RobotType::MINI_CHEETAH
-                             ? window->setupMiniCheetah(seColor, false, false)
-                             : window->setupCheetah3(seColor, false, false);
+
+    if (_robot == RobotType::MINI_CHEETAH) {
+        _simRobotID = window->setupMiniCheetah(truthColor, true, true);
+        _controllerRobotID = window->setupMiniCheetah(seColor, false, false);
+    } else if (_robot==RobotType::CHEETAH_3) {
+        _simRobotID = window->setupCheetah3(truthColor, true, true);
+        _controllerRobotID = window->setupCheetah3(seColor, false, false);
+    } else if (_robot==RobotType::STOCH) {
+        _simRobotID = window->setupStoch(truthColor, true, true);
+        _controllerRobotID = window->setupStoch(seColor, false, false);
+    } else {
+        assert(false);
+    }
+
   }
 
   // init rigid body dynamics
@@ -155,7 +164,7 @@ Simulation::Simulation(RobotType robot, Graphics3D* window,
 
   printf("[Simulation] Setup low-level control...\n");
   // init spine:
-  if (_robot == RobotType::MINI_CHEETAH) {
+  if (_robot == RobotType::MINI_CHEETAH || _robot == RobotType::STOCH) {
     for (int leg = 0; leg < 4; leg++) {
       _spineBoards[leg].init(Quadruped<float>::getSideSign(leg), leg);
       _spineBoards[leg].data = &_spiData;
@@ -196,6 +205,9 @@ Simulation::Simulation(RobotType robot, Graphics3D* window,
   } else if (_robot == RobotType::CHEETAH_3) {
     _robotParams.initializeFromYamlFile(getConfigDirectoryPath() +
                                         CHEETAH_3_DEFAULT_PARAMETERS);
+  } else if (_robot == RobotType::STOCH) {
+      _robotParams.initializeFromYamlFile(getConfigDirectoryPath() +
+                                          STOCH_DEFAULT_PARAMETERS);
   } else {
     assert(false);
   }
@@ -338,7 +350,7 @@ void Simulation::step(double dt, double dtLowLevelControl,
   }
 
   // actuator model:
-  if (_robot == RobotType::MINI_CHEETAH) {
+  if (_robot == RobotType::MINI_CHEETAH || _robot == RobotType::STOCH) {
     for (int leg = 0; leg < 4; leg++) {
       for (int joint = 0; joint < 3; joint++) {
         _tau[leg * 3 + joint] = _actuatorModels[joint].getTorque(
@@ -376,7 +388,7 @@ void Simulation::step(double dt, double dtLowLevelControl,
 }
 
 void Simulation::lowLevelControl() {
-  if (_robot == RobotType::MINI_CHEETAH) {
+  if (_robot == RobotType::MINI_CHEETAH || _robot == RobotType::STOCH) {
     // update spine board data:
     for (int leg = 0; leg < 4; leg++) {
       _spiData.q_abad[leg] = _simulator->getState().q[leg * 3 + 0];
@@ -432,7 +444,7 @@ void Simulation::highLevelControl() {
 
 
   // send leg data to robot
-  if (_robot == RobotType::MINI_CHEETAH) {
+  if (_robot == RobotType::MINI_CHEETAH || _robot == RobotType::STOCH) {
     _sharedMemory().simToRobot.spiData = _spiData;
   } else if (_robot == RobotType::CHEETAH_3) {
     for (int i = 0; i < 4; i++) {
@@ -468,7 +480,7 @@ void Simulation::highLevelControl() {
   _robotMutex.unlock();
 
   // update
-  if (_robot == RobotType::MINI_CHEETAH) {
+  if (_robot == RobotType::MINI_CHEETAH || _robot == RobotType::STOCH) {
     _spiCommand = _sharedMemory().robotToSim.spiCommand;
 
     // pretty_print(_spiCommand.q_des_abad, "q des abad", 4);

@@ -19,8 +19,8 @@
 #include "Controllers/PositionVelocityEstimator.h"
 //#include "rt/rt_interface_lcm.h"
 
-RobotRunner::RobotRunner(RobotController* robot_ctrl, 
-    PeriodicTaskManager* manager, 
+RobotRunner::RobotRunner(RobotController* robot_ctrl,
+    PeriodicTaskManager* manager,
     float period, std::string name):
   PeriodicTask(manager, period, name),
   _lcm(getLcmUrl(255)) {
@@ -121,16 +121,19 @@ void RobotRunner::run() {
         } else if (robotType == RobotType::CHEETAH_3) {
           kpMat << 50, 0, 0, 0, 50, 0, 0, 0, 50;
           kdMat << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+        } else if (robotType == RobotType::STOCH) {
+            kpMat << 5, 0, 0, 0, 5, 0, 0, 0, 5;
+            kdMat << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1;
         } else {
           assert(false);
-        } 
+        }
 
         for (int leg = 0; leg < 4; leg++) {
           _legController->commands[leg].kpJoint = kpMat;
           _legController->commands[leg].kdJoint = kdMat;
         }
       } else {
-        // Run Control 
+        // Run Control
         _robot_ctrl->runController();
         cheetahMainVisualization->p = _stateEstimate.position;
 
@@ -168,6 +171,8 @@ void RobotRunner::setupStep() {
     _legController->updateData(spiData);
   } else if (robotType == RobotType::CHEETAH_3) {
     _legController->updateData(tiBoardData);
+  } else if (robotType == RobotType::STOCH) {
+      _legController->updateData(spiData);
   } else {
     assert(false);
   }
@@ -207,6 +212,8 @@ void RobotRunner::finalizeStep() {
     _legController->updateCommand(spiCommand);
   } else if (robotType == RobotType::CHEETAH_3) {
     _legController->updateCommand(tiBoardCommand);
+  } else if (robotType == RobotType::STOCH) {
+      _legController->updateCommand(spiCommand);
   } else {
     assert(false);
   }

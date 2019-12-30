@@ -80,34 +80,26 @@ int main_helper(int argc, char** argv, RobotController* ctrl) {
       printUsage();
       return EXIT_FAILURE;
     }
-    if (gMasterConfig._robot == RobotType::MINI_CHEETAH) {
+    if (gMasterConfig._robot == RobotType::MINI_CHEETAH || gMasterConfig._robot == RobotType::STOCH) {
       SimulationBridge simulationBridge(gMasterConfig._robot, ctrl);
       simulationBridge.run();
       printf("[Quadruped] SimDriver run() has finished!\n");
     } else if (gMasterConfig._robot == RobotType::CHEETAH_3) {
       SimulationBridge simulationBridge(gMasterConfig._robot, ctrl);
       simulationBridge.run();
-    } else if (gMasterConfig._robot == RobotType::STOCH) {
-        SimulationBridge simulationBridge(gMasterConfig._robot, ctrl);
-        simulationBridge.run();
-        printf("[Quadruped] SimDriver run() has finished!\n");
-      } else {
+    } else {
       printf("[ERROR] unknown robot\n");
       assert(false);
     }
   } else {
 #ifdef linux
-    if (gMasterConfig._robot == RobotType::MINI_CHEETAH) {
+    if (gMasterConfig._robot == RobotType::MINI_CHEETAH || gMasterConfig._robot == RobotType::STOCH) {
       MiniCheetahHardwareBridge hw(ctrl, gMasterConfig.load_from_file);
       hw.run();
       printf("[Quadruped] SimDriver run() has finished!\n");
     } else if (gMasterConfig._robot == RobotType::CHEETAH_3) {
       Cheetah3HardwareBridge hw(ctrl);
       hw.run();
-    } else if (gMasterConfig._robot == RobotType::STOCH) {
-        StochHardwareBridge hw(ctrl, gMasterConfig.load_from_file);
-        hw.run();
-        printf("[Quadruped] SimDriver run() has finished!\n");
     } else {
       printf("[ERROR] unknown robot\n");
       assert(false);
