@@ -133,7 +133,7 @@ size_t Graphics3D::setupCheetah3(Vec4<float> color, bool useOld, bool canHide) {
 size_t Graphics3D::setupMiniCheetah(Vec4<float> color, bool useOld, bool canHide) { return _drawList.addMiniCheetah(color, useOld, canHide); }
 
 /*!
- * Configure the window for displaying mini cheetah
+ * Configure the window for displaying stoch
  */
 size_t Graphics3D::setupStoch(Vec4<float> color, bool useOld, bool canHide) { return _drawList.addStoch(color, useOld, canHide); }
 

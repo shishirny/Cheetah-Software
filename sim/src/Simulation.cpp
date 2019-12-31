@@ -44,15 +44,24 @@ Simulation::Simulation(RobotType robot, Graphics3D* window,
   // init quadruped info
   printf("[Simulation] Build quadruped...\n");
   _robot = robot;
-  _quadruped = _robot == RobotType::MINI_CHEETAH ? buildMiniCheetah<double>()
-                                                 : buildCheetah3<double>();
+
+  if (_robot == RobotType::MINI_CHEETAH){
+      _quadruped = buildMiniCheetah<double>();
+  } else if (_robot == RobotType::CHEETAH_3) {
+      _quadruped = buildCheetah3<double>();
+  } else if (_robot == RobotType::STOCH) {
+      _quadruped = buildStoch<double>();
+  } else {
+      assert(false);
+  }
+
   printf("[Simulation] Build actuator model...\n");
   _actuatorModels = _quadruped.buildActuatorModels();
   _window = window;
 
   // init graphics
   if (_window) {
-    printf("[Simulation] Setup Cheetah graphics...\n");
+    printf("[Simulation] Setup Quadruped graphics...\n");
     Vec4<float> truthColor, seColor;
     truthColor << 0.2, 0.4, 0.2, 0.6;
     seColor << .75,.75,.75, 1.0;

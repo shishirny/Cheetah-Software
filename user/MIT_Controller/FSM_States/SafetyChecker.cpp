@@ -131,10 +131,14 @@ bool SafetyChecker<T>::checkForceFeedForward() {
   if (data->_quadruped->_robotType == RobotType::CHEETAH_3) {
     maxLateralForce = 1800;
     maxVerticalForce = 1800;
-
   } else if (data->_quadruped->_robotType == RobotType::MINI_CHEETAH) {
     maxLateralForce = 350;
     maxVerticalForce = 350;
+  } else if (data->_quadruped->_robotType == RobotType::STOCH) {
+      maxLateralForce = 350;
+      maxVerticalForce = 350;
+  } else {
+      assert(false);
   }
 
   // Check all of the legs
